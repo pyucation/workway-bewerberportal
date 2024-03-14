@@ -2,6 +2,7 @@ import os
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
+import base64
 
 from models.applicant import Applicant, ApplicantDB
 
@@ -35,6 +36,19 @@ def save_file(file):
         return file_path
     return None
 
+def encode_file(file):
+    """Encode a file to Base64."""
+    # TODO: not working, returns empty string
+    return file
+    if file:
+        # Read the file in binary mode
+        file_content = file.read()
+        # Encode the file content in base64
+        encoded = base64.b64encode(file_content).decode('utf-8')
+        print("encoded file:", encoded)
+        return encoded
+    return None
+
 
 ##############
 # APPLICANTS #
@@ -59,13 +73,13 @@ def add_applicant():
     cv_file = request.files.get('cv_file')
     img_file = request.files.get('img_file')
     
-    # Save files if they are present
-    cv_path = save_file(cv_file) if cv_file else None
-    img_path = save_file(img_file) if img_file else None
+    # Encode files if they are present
+    cv_encoded = encode_file(cv_file) if cv_file else None
+    img_encoded = encode_file(img_file) if img_file else None
 
     # Add file paths to data dict
-    data['cv_path'] = cv_path
-    data['img_path'] = img_path
+    data['cv_encoded'] = cv_encoded
+    data['img_encoded'] = img_encoded
     
     try:
         # Assuming you have a modified Applicant constructor or method to handle file paths

@@ -1,7 +1,6 @@
 import os
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from werkzeug.utils import secure_filename
 
 
 class Applicant:
@@ -14,8 +13,8 @@ class Applicant:
                  languages: list[str],
                  tools: list[str],
                  special_field: str,
-                 cv_path: str = None,
-                 img_path: str = None):
+                 cv_encoded: str = None,
+                 img_encoded: str = None):
         self.name = name
         # birthday is in format: DD-MM-YYYY
         self.birthday = birthday
@@ -25,8 +24,8 @@ class Applicant:
         self.languages = languages
         self.tools = tools
         self.special_field = special_field
-        self.cv_path = cv_path
-        self.img_path = img_path
+        self.cv_encoded = cv_encoded
+        self.img_encoded = img_encoded
 
     @classmethod
     def from_dict(cls, d):
@@ -42,8 +41,8 @@ class Applicant:
             "languages": self.languages,
             "tools": self.tools,
             "special_field": self.special_field,
-            "cv_path": self.cv_path,
-            "img_path": self.img_path
+            "cv_encoded": self.cv_encoded,
+            "img_encoded": self.img_encoded
         }
     
 
@@ -90,19 +89,19 @@ class ApplicantDB:
     def add_applicant(self, applicant, cv_file=None, image_file=None):
         """ insert an applicant into the database, handling file uploads.
         """
-        if cv_file:
-            cv_filename = secure_filename(cv_file.name)
-            cv_path = os.path.join(self.upload_folder, cv_filename)
-            cv_file.save(cv_path)
-            applicant.cv_path = cv_path
+        # if cv_file:
+        #     cv_filename = secure_filename(cv_file.name)
+        #     cv_encoded = os.path.join(self.upload_folder, cv_filename)
+        #     cv_file.save(cv_encoded)
+        #     applicant.cv_encoded = cv_encoded
 
-        if image_file:
-            image_filename = secure_filename(image_file.name)
-            image_path = os.path.join(self.upload_folder, image_filename)
-            image_file.save(image_path)
-            applicant.image_path = image_path
-
+        # if image_file:
+        #     image_filename = secure_filename(image_file.name)
+        #     image_path = os.path.join(self.upload_folder, image_filename)
+        #     image_file.save(image_path)
+        #     applicant.image_path = image_path
         applicant_dict = applicant.to_dict()
+        print(applicant_dict)
         result = self.applicants.insert_one(applicant_dict)
         return str(result.inserted_id)
 

@@ -1,5 +1,7 @@
 import streamlit as st
 import requests
+import base64
+import io
 
 
 API_BASE_URL = "http://localhost:5000"
@@ -55,33 +57,78 @@ def add_applicant():
 
 
 def search_applicants():
-    st.header("Search Applicants")
-    search_field = st.selectbox("Select a field to search by:", options=["tools", "name", "languages", "special_field"])
-    search_query = st.text_input(f"Enter {search_field} to search for:")
-
+    search_query = st.text_input("Enter search query:")
     if st.button("Search"):
-        response = requests.get(f"{API_BASE_URL}/applicants/search", params={"query_field": search_field, "query_value": search_query})
+        # Example of sending a search query to your backend
+        response = requests.get(f"{API_BASE_URL}/applicants/search", params={"query": search_query})
         if response.status_code == 200:
             applicants = response.json()
-            if applicants:
-                for applicant in applicants:
-                    tools = ', '.join(applicant.get('tools', []))
-                    languages = ', '.join(applicant.get('languages', []))
-                    st.write(f"Name: {applicant['name']}, Email: {applicant['email']}, Tools: {tools}, Languages: {languages}, Special Field: {applicant.get('special_field', 'N/A')}")
-            else:
-                st.write("No applicants found.")
+            for applicant in applicants:
+                col1, col2 = st.columns([1, 4])
+                with col1:
+                    if applicant['img_encoded']:
+                        # Decode the base64 image
+                        # img_data = base64.b64decode(applicant['img_encoded'])
+                        img_data = applicant['img_encoded']
+                        st.image(img_data, width=100)
+                with col2:
+                    # Use a button for each applicant to make it clickable
+                    if st.button(applicant['name'], key=applicant['_id']):
+                        # Save the selected applicant's ID to session_state
+                        st.session_state.selected_applicant_id = applicant['_id']
+                        # Redirect to the detailed view
+                        st.rerun()
         else:
-            st.error(f"Failed to search applicants: {response.json().get('error')}")
+            st.error("Failed to fetch applicants.")
+
+def display_applicant_details(applicant):
+    # Assuming 'applicant' is a dictionary with the applicant's details
+    name = applicant.get("name", "N/A")
+    email = applicant.get("email", "N/A")
+    cv_encoded = applicant.get("cv_encoded")
+    img_encoded = applicant.get("img_encoded")
+
+    st.write(f"Name: {name}")
+    st.write(f"Email: {email}")
+
+    if img_encoded:
+        # Decode the base64 string
+        # img_data = base64.b64decode(img_encoded)
+        img_data = img_encoded
+        # Convert to a format that st.image can display
+        img_file = io.BytesIO(img_data)
+        st.image(img_file, caption="Applicant Image")
+
+    if cv_encoded:
+        # Decode the base64 string
+        # cv_data = base64.b64decode(cv_encoded)
+        cv_data = cv_encoded
+        # Convert to a format suitable for st.download_button
+        cv_file = io.BytesIO(cv_data)
+        st.download_button(
+            label="Download CV",
+            data=cv_file,
+            file_name=f"{name}_CV.pdf",  # You might want to dynamically determine the file extension
+            mime="application/octet-stream"  # Use the appropriate MIME type
+        )
+
 
 
 def main():
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ("Add New Applicant", "Search Applicants"))
+    page = st.sidebar.radio("Go to", ("Add New Applicant", "Search Applicants", "Applicant Details"))
 
     if page == "Add New Applicant":
         add_applicant()
     elif page == "Search Applicants":
         search_applicants()
+        if 'selected_applicant_id' in st.session_state:
+            # If an applicant has been selected, automatically switch to the details view
+            page = "Applicant Details"
+            st.sidebar.radio("Go to", ("Add New Applicant", "Search Applicants", "Applicant Details"), index=2)
+
+    if page == "Applicant Details" and 'selected_applicant_id' in st.session_state:
+        display_applicant_details(st.session_state.selected_applicant_id)
 
 
 if __name__ == "__main__":
