@@ -26,6 +26,7 @@ def add_applicant():
         submit_button = st.form_submit_button("Submit")
 
         if submit_button:
+            files = {}
             applicant_data = {
                 "name": name,
                 "email": email,
@@ -34,17 +35,19 @@ def add_applicant():
                 "company": company or None,  # Treat empty string as None
                 "special_field": special_field,
                 "languages": languages.split(",") if languages else [],
-                "tools": tools.split(",") if tools else [],
-                # Assuming the API or another mechanism will handle file storage:
-                # For now, just indicating whether files were uploaded
-                "cv_uploaded": cv_file is not None,
-                "img_uploaded": img_file is not None
+                "tools": tools.split(",") if tools else []
             }
 
             # Here you would handle the file uploads separately.
             # This example does not include the process of uploading files to the server.
+            if cv_file is not None:
+                # Read the file and prepare for upload
+                files["cv_file"] = (cv_file.name, cv_file.getvalue(), cv_file.type)
+            if img_file is not None:
+                # Read the file and prepare for upload
+                files["image_file"] = (img_file.name, img_file.getvalue(), img_file.type)
             
-            response = requests.post(f"{API_BASE_URL}/applicant", json=applicant_data)
+            response = requests.post(f"{API_BASE_URL}/applicant", data=applicant_data, files=files)
             if response.status_code == 201:
                 st.success("Applicant added successfully!")
             else:
