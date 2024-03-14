@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from models.applicant import Applicant, ApplicantDB
 
 
-UPLOAD_FOLDER = '/uploads'
+UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx'}
 
 load_dotenv()
@@ -27,7 +27,10 @@ def save_file(file):
     """Save an uploaded file to the UPLOAD_FOLDER."""
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')  # Get from config or use default
+        # Ensure the upload directory exists
+        os.makedirs(upload_folder, exist_ok=True)  # Creates the directory if it doesn't exist
+        file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
         return file_path
     return None
